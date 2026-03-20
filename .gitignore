@@ -1,0 +1,72 @@
+node_modules/
+**/cache/
+dist/
+dist-electron/
+build/iso/
+*.log
+.env
+.env.local
+.env.*.local
+.pnpm-config.json
+
+# Sensitive configs
+openclaw.json
+
+# IDE / OS
+.DS_Store
+*.swp
+*~
+
+# Cursor plans (local only)
+.cursor/plans/
+
+# Migration docs (contain PII references)
+docs/MIGRATION-*.md
+
+# AOSP 构建产物 (如果不小心放到仓库目录内)
+out/
+*.img
+
+# AOSP 模拟器镜像 (Mac 端)
+clawos-emulator-images/
+
+# ── Node.js cross-compilation build directory ──────────────────
+# Contains ~38k files of intermediate build artifacts
+build/node-android/
+
+# ── Android / Capacitor build artifacts ────────────────────────
+ui/android/.gradle/
+ui/android/.idea/
+ui/android/app/build/
+ui/android/capacitor-cordova-android-plugins/build/
+ui/android/app/src/main/assets/public/
+ui/android/app/src/main/assets/capacitor.config.json
+ui/android/local.properties
+
+# ── Prebuilt binaries (too large for git) ──────────────────────
+# Node.js ARM64 binary (~57MB) — regenerate with 07-build-node-android.sh
+aosp/device/clawos/prebuilt/node
+# CLI tools (jq etc, ARM64 static binaries) — download with scripts/download-cli-tools.sh
+aosp/device/clawos/prebuilt/tools/
+# Built APK (~4.5MB) — regenerate with: cd ui && pnpm cap:build
+aosp/device/clawos/apps/ClawOS.apk
+# Cromite Browser APK (~164MB) — download from GitHub releases
+aosp/device/clawos/apps/CromiteBrowser.apk
+aosp/device/clawos/gateway/cromite-browser.bin
+# Cromite WebView APK (~275MB) — download from GitHub releases
+aosp/device/clawos/apps/CromiteWebView.apk
+# Telegram APK (~81MB) — download from telegram.org
+aosp/device/clawos/gateway/telegram-installer.bin
+# Gboard APK (~72MB) — download from apkmb.com
+aosp/device/clawos/gateway/gboard-installer.bin
+aosp/device/clawos/gateway/trime-installer.bin
+aosp/device/clawos/gateway/rime-data.tar.gz
+# WebView APK (~88MB) — from AOSP android-13.0.0_r1 (Chrome 101)
+aosp/device/clawos/webview/webview.apk
+# sherpa-onnx AAR (~38MB) — download from GitHub releases
+ui/android/app/libs/sherpa-onnx.aar
+# Voice models (STT/TTS/VAD ~116MB) — download via setup script
+aosp/device/clawos/models/
+
+# ── Emulator image zips ───────────────────────────────────────
+*.zip

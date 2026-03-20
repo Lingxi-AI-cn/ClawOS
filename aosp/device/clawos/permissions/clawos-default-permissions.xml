@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    ClawOS default permissions.
+    Pre-grant critical permissions to ClawOS Launcher so it doesn't need
+    runtime permission flows (which would crash a Launcher on first boot).
+-->
+<exceptions>
+    <exception package="com.clawos.app">
+        <!-- Overlay / Display over other apps – needed for floating AI assistant -->
+        <permission name="android.permission.SYSTEM_ALERT_WINDOW" fixed="true" />
+        <!-- Microphone – needed for voice input (STT) -->
+        <permission name="android.permission.RECORD_AUDIO" fixed="true" />
+        <!-- Foreground service – needed for floating overlay service -->
+        <permission name="android.permission.FOREGROUND_SERVICE" fixed="true" />
+    </exception>
+</exceptions>

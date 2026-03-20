@@ -1,0 +1,64 @@
+{
+  "meta": {
+    "lastTouchedVersion": "2026.2.12",
+    "lastTouchedAt": "2026-02-13T00:00:00.000Z"
+  },
+  "auth": {
+    "profiles": {}
+  },
+  "models": {
+    "providers": {
+      "ollama": {
+        "api": "openai-completions",
+        "baseUrl": "http://10.0.2.2:11434/v1",
+        "apiKey": "ollama-local",
+        "models": []
+      }
+    }
+  },
+  "agents": {
+    "defaults": {
+      "model": {},
+      "models": {},
+      "workspace": "/data/local/tmp/clawos/workspace",
+      "maxConcurrent": 2,
+      "subagents": {
+        "maxConcurrent": 4
+      }
+    }
+  },
+  "commands": {
+    "native": "auto",
+    "nativeSkills": "auto"
+  },
+  "gateway": {
+    "port": 18789,
+    "mode": "local",
+    "bind": "loopback",
+    "auth": {
+      "mode": "token",
+      "token": "clawos-device-token"
+    },
+    "controlUi": {
+      "dangerouslyDisableDeviceAuth": true
+    }
+  },
+  "messages": {
+    "ackReactionScope": "group-mentions"
+  },
+  "browser": {
+    "enabled": true,
+    "attachOnly": false,
+    "cdpUrl": "http://127.0.0.1:9222",
+    "defaultProfile": "openclaw",
+    "profiles": {
+      "openclaw": {
+        "cdpUrl": "http://127.0.0.1:9222",
+        "color": "22d3ee"
+      }
+    }
+  },
+  "plugins": {
+    "entries": {}
+  }
+}

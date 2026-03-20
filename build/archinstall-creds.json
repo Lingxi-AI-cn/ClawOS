@@ -1,0 +1,10 @@
+{
+  "!NOTE": "Default password is 'clawos'. Change it after first login with: passwd",
+  "users": [
+    {
+      "sudo": true,
+      "username": "clawos",
+      "!password": "clawos"
+    }
+  ]
+}

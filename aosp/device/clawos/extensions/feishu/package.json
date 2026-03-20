@@ -1,0 +1,6 @@
+{
+  "name": "@openclaw/feishu",
+  "version": "0.1.0",
+  "description": "OpenClaw Feishu/Lark channel plugin (placeholder - replace with actual plugin build)",
+  "main": "index.js"
+}

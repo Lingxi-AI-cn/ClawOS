@@ -1,0 +1,12 @@
+android_app_import {
+    name: "ClawOS",
+    apk: "ClawOS.apk",
+    presigned: true,
+    preprocessed: true,
+    skip_preprocessed_apk_checks: true,
+    privileged: true,
+    product_specific: true,
+    dex_preopt: {
+        enabled: false,
+    },
+}

@@ -1,0 +1,49 @@
+{
+  "meta": {
+    "lastTouchedVersion": "2026.2.19",
+    "lastTouchedAt": "2026-02-19T10:00:00.000Z"
+  },
+  "auth": {
+    "profiles": {}
+  },
+  "models": {
+    "providers": {}
+  },
+  "agents": {
+    "defaults": {
+      "workspace": "/data/local/tmp/clawos/workspace",
+      "maxConcurrent": 2,
+      "subagents": {
+        "maxConcurrent": 4
+      }
+    }
+  },
+  "commands": {
+    "native": "auto",
+    "nativeSkills": "auto"
+  },
+  "gateway": {
+    "port": 18789,
+    "mode": "local",
+    "bind": "loopback",
+    "auth": {
+      "mode": "token",
+      "token": "clawos-device-token"
+    }
+  },
+  "messages": {
+    "ackReactionScope": "group-mentions"
+  },
+  "browser": {
+    "enabled": true,
+    "attachOnly": true,
+    "cdpUrl": "http://127.0.0.1:9223",
+    "defaultProfile": "openclaw",
+    "profiles": {
+      "openclaw": {
+        "cdpUrl": "http://127.0.0.1:9223",
+        "color": "22d3ee"
+      }
+    }
+  }
+}

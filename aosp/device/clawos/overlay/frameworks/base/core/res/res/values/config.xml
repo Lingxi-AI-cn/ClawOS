@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    ClawOS system configuration overlay.
+
+    These values override the defaults in frameworks/base/core/res/res/values/config.xml
+    to customize the system behavior for ClawOS.
+    Only override values that actually exist in the AOSP framework.
+-->
+<resources>
+    <!-- Default screen brightness (0-255). Set to a comfortable level. -->
+    <integer name="config_screenBrightnessSettingDefault">180</integer>
+
+    <!-- Force software navigation bar. GSI replaces vendor framework overlays,
+         so Pixel's config_showNavigationBar=true from vendor RRO doesn't apply. -->
+    <bool name="config_showNavigationBar">true</bool>
+</resources>

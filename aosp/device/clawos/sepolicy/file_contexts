@@ -1,0 +1,7 @@
+# ClawOS file contexts
+#
+# Development: use system_file labels so the shell domain can access them.
+# The clawos_gateway domain is still defined and permissive for future use,
+# but the init service currently runs as shell:s0 to avoid domain transition issues.
+/product/bin/node                u:object_r:system_file:s0
+/product/etc/clawos(/.*)?        u:object_r:system_file:s0

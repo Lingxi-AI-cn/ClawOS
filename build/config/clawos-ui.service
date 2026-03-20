@@ -1,0 +1,21 @@
+[Unit]
+Description=ClawOS AI UI (Electron Kiosk)
+After=graphical-session.target openclaw-gateway.service
+Wants=openclaw-gateway.service
+PartOf=graphical-session.target
+
+[Service]
+Type=simple
+User=clawos
+Environment=DISPLAY=:0
+Environment=WAYLAND_DISPLAY=wayland-0
+Environment=XDG_RUNTIME_DIR=/run/user/1000
+Environment=DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus
+Environment=ELECTRON_OZONE_PLATFORM_HINT=auto
+WorkingDirectory=/home/clawos/ClawOS/ui
+ExecStart=/home/clawos/ClawOS/ui/node_modules/.bin/electron .
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=graphical-session.target

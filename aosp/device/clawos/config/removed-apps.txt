@@ -1,0 +1,26 @@
+# ClawOS - Apps to remove post-build
+#
+# These user-level apps are included via the inherited sdk_phone_arm64 product
+# but are not needed for ClawOS. They will be removed from PRODUCT_OUT after
+# the main build completes, before generating the emulator image zip.
+#
+# Format: one app directory name per line (as found under system/app/ or
+# system/priv-app/ or product/app/ etc.)
+# Lines starting with # are comments. Blank lines are ignored.
+
+# --- User-level apps (from handheld_product.mk) ---
+Browser2
+Calendar
+Camera2
+Contacts
+DeskClock
+Gallery2
+Music
+QuickSearchBox
+OneTimeInitializer
+
+# --- Emulator test apps ---
+EmulatorSmokeTests
+
+# --- Default launcher (will be replaced by ClawOS Launcher in Phase 1) ---
+Launcher3QuickStep

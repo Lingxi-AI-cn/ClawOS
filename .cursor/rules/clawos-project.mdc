@@ -1,0 +1,655 @@
+---
+description: ClawOS 项目全局上下文 - AI 驱动的下一代实验性操作系统
+alwaysApply: true
+---
+
+# ClawOS 项目上下文
+
+## 项目愿景
+
+ClawOS 是一个深度集成 OpenClaw 的下一代实验性操作系统。核心理念：用户通过**自然语言**告诉 OS 自己的意图，底层操作由 LLM 驱动的 OpenClaw 工具链完成，彻底改变传统键盘鼠标输入详细命令/动作的交互方式。
+
+## 目标平台
+
+ClawOS 支持两个运行平台，代码库统一：
+
+### 平台 1: Desktop (Electron + Ubuntu)
+- Electron 40.2 kiosk 模式运行在 Ubuntu 24.04 (ARM64) + GNOME 桌面上
+- 通过 Parallels Desktop VM (Apple Silicon Mac) 运行
+- 当前已完成核心功能
+
+### 平台 2: Android AOSP (已运行)
+- 自定义 AOSP ROM，ClawOS 作为唯一默认 Launcher
+- **AOSP 源码**: `/opt/aosp` → 符号链接到 `/opt/aosp16` (Android 16, Pixel 8 Pro 主力构建)
+- 旧 Android 12 源码已归档到 `/opt/aosp12`
+- 使用 Capacitor 将 React Web UI 封装为 Android 应用（已完成）
+- 嵌入 Node.js 运行 OpenClaw Gateway（`/product/bin/node`，已预装）
+- **双 LLM 支持**: 云端 (Gemini Flash) + 本地 (Ollama via OpenAI 兼容 API)，UI 可一键切换
+- 集成 Sherpa-ONNX 实现离线语音识别 (STT) 和语音合成 (TTS)
+
+## 当前进度
+
+**已完成: AOSP 系统构建 + ROM 定制 + 语音功能**
+
+| 里程碑 | 状态 |
+|--------|------|
+| AOSP 源码同步 | ✅ 完成 |
+| AOSP 编译 (`clawos_arm64-userdebug`) | ✅ 完成 |
+| Mac 模拟器验证 | ✅ 完成 |
+| ClawOS Launcher 预装 (Capacitor APK) | ✅ 完成 |
+| 自定义开机动画 | ✅ 完成 |
+| 移除默认 Launcher/多余应用 | ✅ 完成 |
+| OpenClaw Gateway 自启动服务 | ✅ 完成 |
+| Kiosk/沉浸模式 | ✅ 完成 |
+| Capacitor Native Bridge (`ClawOSBridge`) | ✅ 完成 |
+| 离线 STT (Sherpa-ONNX, 中文+英文) | ✅ 完成 |
+| 离线 TTS (Sherpa-ONNX, 中文) | ✅ 完成 |
+| UI 移动端适配 (内联样式) | ✅ 完成 |
+| HUD 手机化 (运营商/时间/信号/电池) | ✅ 完成 |
+| Ollama 本地 LLM 集成 + 模型切换 UI | ✅ 完成 |
+| App Drawer (应用列表抽屉) | ✅ 完成 |
+
+## 仓库信息
+
+- **GitHub**: `Lingxi-AI-cn/ClawOS` (public, Apache 2.0)
+- **主分支**: `main`
+
+## 开发环境
+
+### 主开发环境: Ubuntu 服务器 (SSH 远程)
+- **主机名**: `legion`
+- **系统**: Ubuntu 24.04 x86_64
+- **硬件**: 20 核 CPU, 64 GB RAM, 高速 SSD
+- **项目路径**: `/opt/ClawOS`
+- **AOSP 源码**: `/opt/aosp` → 符号链接到 `/opt/aosp16` (Android 16, Pixel 8 Pro 主力)
+- **AOSP 12 源码 (旧)**: `/opt/aosp12` (已归档)
+- **JDK**: `$JAVA_HOME` (OpenJDK 21, Gradle 构建用)
+- **连接方式**: Cursor SSH Remote
+- **用途**: AOSP 构建、ROM 定制、主力开发
+
+### 辅助环境: Mac (Apple Silicon)
+- **用途**: 模拟器运行 (Android Studio Emulator)、Git 管理、代码审查
+- **模拟器镜像**: `~/clawos-emulator-images/`
+- **模拟器 AVD**: `ClawOS_ARM64`
+
+### 辅助环境: Windows
+- **用途**: 镜像拉取、真机刷写 (Pixel 8 Pro)、代码审查
+- **ARM64 Windows 额外支持**: 模拟器运行 (需要 Hyper-V)
+- **x86_64 Windows 限制**: 不支持模拟器 (ARM64 镜像无法在 x86_64 上运行)
+- **镜像目录**: `$env:USERPROFILE\clawos-emulator-images\` (模拟器)、`$env:USERPROFILE\clawos-pixel8pro\` (真机)
+
+### 环境切换说明
+- 日常开发在 Ubuntu 服务器上通过 Cursor SSH Remote 进行
+- AOSP 构建只能在 Linux (Ubuntu) 上执行
+- 模拟器运行在 Mac (Apple Silicon) 或 ARM64 Windows 上 (ARM64 镜像需要 ARM64 主机)
+- x86_64 Windows 只能用于真机刷写和镜像拉取
+- Git 操作各端都可以
+
+## 技术栈
+
+### 前端 UI (已完成)
+- **框架**: React 19.2 + TypeScript 5.9
+- **构建**: Vite 7.3
+- **样式**: Tailwind CSS 4 + 大量内联样式 (Android WebView 兼容性)
+- **状态管理**: Zustand 5
+- **动画**: Motion (framer-motion) 12
+- **图标**: Lucide React
+- **3D 效果**: Three.js + @react-three/fiber + @react-three/drei + postprocessing
+- **包管理**: pnpm 10.x
+
+### Android 壳层 (已完成)
+- **Capacitor 7**: WebView + Native Bridge (替代 Electron preload)
+- **ClawOSBridge** (`ClawOSBridge.java`): 系统信息、网络状态、电池等原生 API
+- **ClawOSVoice** (`ClawOSVoice.java`): Sherpa-ONNX STT/TTS/VAD Capacitor 插件
+- **前端桥接**: `ui/src/gateway/bridge.ts` — 平台检测 (`isAndroid`/`isElectron`)、注册 `ClawOSBridge` 插件
+- **语音模块**: `ui/src/voice/` — `plugin.ts`（注册 `ClawOSVoice`）、`index.ts`（`voiceService` 单例）、`types.ts`
+- **Launcher 模式**: HOME intent filter + `SYSTEM_UI_FLAG_IMMERSIVE_STICKY` kiosk mode
+- **AndroidManifest**: `RECORD_AUDIO` 权限、`adjustResize` 键盘模式
+
+### 语音功能 (已完成)
+- **引擎**: Sherpa-ONNX (离线，on-device)
+- **STT 模型**: `sherpa-onnx-streaming-zipformer-zh-14M-2023-02-23` (中文+英文，流式)
+  - int8 encoder + float decoder + int8 joiner
+- **TTS 模型**: `sherpa-onnx-tts-matcha-zh-baker` (中文, Matcha + HiFiGAN vocoder)
+- **VAD**: Silero VAD v4
+- **AAR**: `sherpa-onnx.aar` (放在 `ui/android/app/libs/`，~38MB，.gitignore)
+- **模型部署**: 预装到 ROM `/product/etc/clawos/models/{stt,tts,vad}/` (~123MB)
+- **AudioRecord**: 尝试多种 AudioSource (VOICE_RECOGNITION → MIC → DEFAULT → UNPROCESSED)
+- **已知限制**: 模拟器麦克风需手动开启 Extended Controls → Microphone → "Virtual microphone uses host audio input"
+
+### 桌面壳层 (Desktop 平台)
+- **Electron 40.2**: frameless 窗口, kiosk 模式
+- **Preload API** (`window.clawos`): quit, readConfig, getSystemInfo, listDirectory, platform, isElectron
+- **系统依赖**: `/proc/net/dev`, `os`, `fs`, `child_process`
+
+### AOSP 构建 (已完成)
+- **AOSP 源码**: `/opt/aosp` → 符号链接到 `/opt/aosp16` (Android 16)
+- **主要构建目标**: `clawos_gsi_arm64-trunk_staging-userdebug` (三段式, Android 16, Pixel 8 Pro)
+- **旧 Android 12 源码**: `/opt/aosp12` (已归档)
+- **源码镜像**: 清华大学 TUNA (`mirrors.tuna.tsinghua.edu.cn`)
+- **构建配置**: `aosp/config/build-env.conf`
+- **已知限制**: Ubuntu 24.04 需要 ncurses5 符号链接兼容 AOSP 预编译工具链
+
+### 后端 / Gateway
+- **OpenClaw Gateway**: Node.js 22+, 端口 18789, WebSocket 协议 v3
+- **LLM 云端**: google-antigravity provider: Gemini 3 Flash (默认 primary model)
+- **LLM 本地**: Ollama via OpenAI 兼容 API (`/v1/chat/completions`)
+  - 配置在 `openclaw-default.json` 的 `models.providers.ollama` 中
+  - `api` 必须用 `"openai-completions"` (bundled Gateway 不支持 `"ollama"` 原生 API)
+  - `baseUrl` 必须用 `http://10.0.2.2:11434/v1` (模拟器特殊 IP + `/v1` 后缀)
+  - 模型切换通过 `sessions.patch` RPC (参数: `key` + `model`，不是 `sessionKey`/`modelOverride`)
+- **认证**: Gateway token (保存在 `openclaw.json`)
+- **ROM 启动**: `init.clawos.rc` → `sys.boot_completed=1` 时自动启动 gateway 服务
+
+### 模型切换 UI
+- **ModelSwitcher 组件** (`ui/src/components/ModelSwitcher.tsx`): 输入框上方的切换芯片
+- **连接 store** (`ui/src/store/connection.ts`): `ModelMode` 类型 (`'cloud' | 'local'`)，`MODEL_OPTIONS` 数组
+- **切换流程**: 点击芯片 → `sessions.patch` RPC → Gateway 更新 session 的 model override → 后续对话使用新模型
+- **状态持久化**: 通过 `localStorage` 保存上次选择的模型模式
+- **注意**: 本地模型不支持 tool calling (function calling)，只适合简单对话
+
+## 项目目录结构
+
+```
+ClawOS/
+├── .cursor/rules/             # Cursor AI 规则 (本文件)
+├── .gitignore
+├── aosp/                      # AOSP 构建脚本和配置
+│   ├── GUIDE.md               # AOSP 构建完整指南
+│   ├── config/
+│   │   ├── build-env.conf     # 构建参数 (分支/目标/镜像/代理等)
+│   │   └── removed-apps.txt   # 被移除的系统应用列表
+│   ├── device/clawos/         # ClawOS 设备树 (源头, rsync 到 /opt/aosp/device/clawos/)
+│   │   ├── AndroidProducts.mk # 注册 clawos_arm64 产品
+│   │   ├── clawos_arm64.mk    # 主产品定义 (继承 goldfish, 添加 ClawOS 定制)
+│   │   ├── clawos_product.mk  # product 分区应用集 (精简)
+│   │   ├── clawos_system_ext.mk # system_ext 分区 (移除 Launcher3QuickStep)
+│   │   ├── apps/
+│   │   │   ├── Android.mk     # ClawOS APK BUILD_PREBUILT
+│   │   │   └── ClawOS.apk     # Capacitor 构建产物 (.gitignore)
+│   │   ├── bootanimation/
+│   │   │   └── generate-bootanim.py  # 开机动画生成脚本
+│   │   ├── gateway/           # OpenClaw Gateway 启动脚本和配置
+│   │   │   ├── start-gateway.sh     # Gateway 启动 (解压bundle, 启动Node.js)
+│   │   │   ├── prepare-dirs.sh      # 目录创建 (oneshot, shell用户)
+│   │   │   ├── install-gboard.sh    # Gboard 首次安装
+│   │   │   ├── cdp-shim.mjs         # CDP 浏览器控制代理
+│   │   │   └── openclaw-default.json # 默认 Gateway 配置
+│   │   ├── clawos_gsi_arm64/       # GSI 构建的 BoardConfig
+│   │   │   └── BoardConfig.mk
+│   │   ├── clawos_gsi_arm64.mk     # GSI 产品定义
+│   │   ├── init/
+│   │   │   └── init.clawos.rc # ClawOS init 服务 (prepare→gateway, kiosk, ADB)
+│   │   ├── models/            # Sherpa-ONNX 模型 (~123MB, .gitignore)
+│   │   │   ├── stt/           # STT: encoder, decoder, joiner, tokens
+│   │   │   ├── tts/           # TTS: matcha model, vocoder, lexicon, dict/
+│   │   │   └── vad/           # VAD: silero_vad.onnx
+│   │   ├── overlay/           # Android 框架资源覆盖
+│   │   ├── prebuilt/
+│   │   │   └── Android.mk     # Node.js 预编译二进制 BUILD_PREBUILT
+│   │   └── sepolicy/          # SELinux 策略
+│   ├── scripts/               # Linux 端构建脚本 (按顺序执行)
+│   │   ├── 01-setup-build-env.sh   # 安装构建依赖 (sudo)
+│   │   ├── 02-sync-source.sh       # AOSP 源码同步
+│   │   ├── 03-build-aosp.sh        # 编译 AOSP + emu_img_zip
+│   │   ├── 04-transfer-images.sh   # 镜像传输到 Mac
+│   │   └── 05-setup-device-tree.sh # rsync 设备树到 AOSP 源码树
+│   └── run-emulator-mac.sh   # Mac 端: 拉取镜像, 创建 AVD, 启动模拟器
+├── build/                     # 桌面版系统部署脚本 (Arch Linux)
+│   ├── create-vm.sh
+│   ├── provision.sh
+│   ├── scripts/
+│   └── config/
+├── ui/                        # 主 UI 应用 (React + Vite + Capacitor)
+│   ├── src/
+│   │   ├── App.tsx            # 主布局，Gateway 连接和事件处理
+│   │   ├── main.tsx           # React 入口
+│   │   ├── index.css          # 全局样式，Tailwind @theme 主题色
+│   │   ├── components/        # UI 组件
+│   │   │   ├── AIBrain.tsx    # 3D AI 大脑动画
+│   │   │   ├── HUD.tsx        # 系统监控 (手机: 运营商/时间/信号/电池)
+│   │   │   ├── ChatPanel.tsx  # 对话面板容器
+│   │   │   ├── ChatArea.tsx   # 消息列表区
+│   │   │   ├── MessageBubble.tsx  # 气泡消息 (用户青色/AI紫色, TTS朗读按钮)
+│   │   │   ├── InputBar.tsx   # 输入框 (含麦克风语音输入按钮)
+│   │   │   ├── ToolCallCard.tsx   # 工具调用卡片
+│   │   │   ├── DataVault.tsx  # 文件浏览器侧栏
+│   │   │   ├── FileBrowser.tsx
+│   │   │   ├── LeftPanel.tsx
+│   │   │   ├── StatusIndicator.tsx
+│   │   │   └── SystemInfo.tsx
+│   │   ├── voice/             # 语音模块 (STT/TTS)
+│   │   │   ├── plugin.ts     # ClawOSVoice Capacitor 插件注册
+│   │   │   ├── index.ts      # voiceService 单例 (startListening/speak 等)
+│   │   │   └── types.ts      # TypeScript 类型定义
+│   │   ├── gateway/           # OpenClaw Gateway 客户端 + 平台桥接
+│   │   │   ├── bridge.ts     # Capacitor 桥接 (isAndroid, ClawOSBridge)
+│   │   │   ├── client.ts     # WebSocket RPC 客户端
+│   │   │   ├── config.ts     # 配置获取 (Electron/Android/URL 三路径)
+│   │   │   ├── protocol.ts   # Gateway Protocol v3 类型定义
+│   │   │   ├── filesystem.ts # 系统信息和文件列表 API
+│   │   │   └── types.ts      # Gateway 类型
+│   │   ├── store/             # Zustand 状态管理
+│   │   │   ├── chat.ts
+│   │   │   ├── connection.ts
+│   │   │   ├── scene.ts
+│   │   │   ├── files.ts
+│   │   │   └── system.ts
+│   │   ├── scene/             # 3D 场景和特效
+│   │   │   ├── NexusScene.tsx
+│   │   │   ├── Effects.tsx
+│   │   │   ├── EnergyGrid.tsx
+│   │   │   ├── ParticleCloud.tsx
+│   │   │   ├── ToolCallBeam.tsx
+│   │   │   └── shaders/
+│   │   └── lib/
+│   │       └── markdown.ts
+│   ├── android/               # Capacitor Android 项目
+│   │   ├── app/
+│   │   │   ├── build.gradle   # 含 sherpa-onnx.aar 依赖
+│   │   │   ├── libs/
+│   │   │   │   └── sherpa-onnx.aar  # Sherpa-ONNX AAR (~38MB, .gitignore)
+│   │   │   └── src/main/
+│   │   │       ├── java/com/clawos/
+│   │   │       │   ├── app/MainActivity.java    # 注册插件, 沉浸模式
+│   │   │       │   └── plugins/
+│   │   │       │       ├── ClawOSBridge.java    # 系统信息原生桥接 + 应用列表/启动
+│   │   │       │       └── ClawOSVoice.java     # STT/TTS Capacitor 插件
+│   │   │       ├── AndroidManifest.xml          # HOME, RECORD_AUDIO
+│   │   │       └── res/
+│   │   └── build.gradle
+│   ├── electron/              # Electron 主进程
+│   │   ├── main.ts
+│   │   ├── preload.cts
+│   │   └── tsconfig.json
+│   ├── .env.local             # Gateway token/port (不提交到 git)
+│   ├── package.json
+│   ├── vite.config.ts
+│   ├── capacitor.config.ts
+│   ├── pnpm-lock.yaml
+│   └── tsconfig*.json
+└── /opt/aosp/                 # AOSP 源码 (不在 git 仓库内, 仅在 Ubuntu 服务器上)
+    ├── device/clawos/         # 从 aosp/device/clawos/ rsync 部署
+    ├── build/
+    ├── frameworks/
+    ├── packages/
+    ├── out/target/product/emulator_arm64/  # 构建产物
+    └── ...
+```
+
+## Android WebView 样式注意事项
+
+Android 12 WebView 对 Tailwind CSS 支持不完整。以下组件的关键布局和视觉样式已改用**内联样式** (`style={{}}`) 以确保渲染可靠：
+
+- `App.tsx` — 根布局 flex 容器
+- `HUD.tsx` — 横向排列的状态栏项
+- `MessageBubble.tsx` — 气泡背景、颜色、布局
+- `ChatPanel.tsx` / `ChatArea.tsx` — 滚动容器
+- `InputBar.tsx` — 输入框和按钮
+
+**规则**: 修改这些组件时，关键布局属性（flex、尺寸、颜色、背景）优先使用内联样式而非 Tailwind class。
+
+## 聊天 UI 设计特点
+
+对话界面采用现代气泡式设计：
+
+- **MessageBubble**: 内联样式玻璃态气泡
+  - 用户消息: 右对齐，青色背景 (`rgba(34,211,238,0.12)`)
+  - AI 消息: 左对齐，紫色背景 (`rgba(168,85,247,0.12)`)，带 Sparkles 图标和 "ClawOS" 标签
+  - AI 消息悬停显示 "朗读" TTS 按钮
+  - 系统消息: 居中 pill 形状
+- **InputBar**: 圆角玻璃态输入框，麦克风按钮 (Android)，脉冲 "正在听..." 指示器
+- **HUD**: 手机风格状态栏 (运营商名称、HH:MM 时间、信号/WiFi/电池图标)
+- **主题色**: 青色 `#22d3ee` (用户/操控)，紫色 `#a855f7` (AI/系统)
+
+## OpenClaw Gateway 协议要点
+
+- **传输**: WebSocket, JSON frames
+- **帧类型**: `req` (请求), `res` (响应), `event` (事件推送)
+- **握手**: 连接后发 `connect` RPC 完成认证
+- **核心 RPC**: `chat.send` (发送消息), `chat.history` (获取历史), `chat.abort` (中止)
+- **事件**: `chat` (消息流/delta/final/error), `agent` (工具调用/生命周期)
+- **认证**: WebSocket URL 参数或 header 中提供 gateway token
+- **端口**: 默认 18789
+
+## AOSP 开发路线图
+
+### Phase 2A: AOSP 系统构建 ✅ 完成
+1. ~~构建环境搭建~~ ✅
+2. ~~AOSP 源码同步~~ ✅
+3. ~~AOSP 编译~~ ✅ `clawos_arm64-userdebug`
+4. ~~Mac 模拟器验证~~ ✅
+
+### Phase 2B: ROM 定制 ✅ 完成
+1. ~~移除默认 Launcher 和多余系统应用~~ ✅ (via `clawos_system_ext.mk`, `clawos_product.mk`)
+2. ~~预装 ClawOS Launcher~~ ✅ (privileged system app, `product/priv-app/`)
+3. ~~自定义 Boot 动画~~ ✅ (`generate-bootanim.py`)
+4. ~~OpenClaw Gateway 服务自启动~~ ✅ (`init.clawos.rc`)
+5. ~~Kiosk 模式锁定~~ ✅ (immersive sticky + FallbackHome redirect)
+
+### Phase 1: Android App ✅ 基础完成
+1. ~~1A: Capacitor 初始化、Vite 集成~~ ✅
+2. ~~1B: Native Bridge~~ ✅ (`ClawOSBridge.java`)
+3. ~~1C: 嵌入 Node.js + Gateway~~ ✅ (预装 `/product/bin/node`)
+4. ~~1D: UI 适配~~ ✅ (内联样式、触摸优化、safe area)
+5. ~~1E: Launcher 集成~~ ✅ (HOME intent, Kiosk mode)
+6. ~~1F: 语音功能~~ ✅ (Sherpa-ONNX STT/TTS/VAD)
+
+### Phase 2C: 设备测试 ✅ 基础完成
+1. ~~GSI 构建 (`clawos_gsi_arm64-userdebug`)~~ ✅
+2. ~~GSI 刷入 Treble 兼容 ARM64 设备~~ ✅ (Lenovo Tab M10 FHD Plus TB-X606F)
+3. ~~Gateway 服务自启动修复~~ ✅ (SELinux/权限问题已解决)
+4. 性能调优和稳定性改进 (进行中)
+
+## ROM 构建完整指南 (新 Agent 必读)
+
+### 核心概念
+
+ROM 构建涉及两个独立的目录:
+- **`/opt/ClawOS`** (git 仓库): 所有源代码和配置。修改都在这里进行。
+- **`/opt/aosp`** (AOSP 源码树): 实际编译发生的地方。通过 `05-setup-device-tree.sh` 脚本从上面 rsync 部署。
+
+**核心流程**: 修改代码 → 构建 APK (如需) → 同步设备树 → AOSP make → 打包 ZIP
+
+### 判断: 修改了什么，就需要执行哪些步骤
+
+| 修改了什么 | 需要执行的步骤 |
+|-----------|--------------|
+| **仅 `aosp/device/clawos/` 下的配置文件** (如 `openclaw-default.json`, `start-gateway.sh`, `AGENTS.md`, `init.clawos.rc`) | Step 2 → Step 3 → Step 4 |
+| **`ui/src/` 下的前端代码** (如 `*.tsx`, `*.ts`, `*.css`) | Step 1 → Step 2 → Step 3 → Step 4 |
+| **`ui/android/` 下的 Android 原生代码** (如 `*.java`, `AndroidManifest.xml`, `build.gradle`) | Step 1 → Step 2 → Step 3 → Step 4 |
+| **同时修改了前端代码 + 配置文件** | Step 1 → Step 2 → Step 3 → Step 4 |
+
+### Step 1: 构建 APK (修改了 ui/ 下的代码时必须执行)
+
+```bash
+# 1a. 构建 Web UI
+cd /opt/ClawOS/ui
+pnpm run build
+
+# 1b. 同步到 Android Capacitor 项目
+npx cap sync android
+
+# 1c. 用 Gradle 构建 Android APK
+export JAVA_HOME=$JAVA_HOME
+cd android
+./gradlew assembleDebug
+
+# 1d. 复制 APK 到设备树源
+cp app/build/outputs/apk/debug/app-debug.apk ../../aosp/device/clawos/apps/ClawOS.apk
+```
+
+**注意**: 如果只修改了 `aosp/device/clawos/` 下的配置文件 (不涉及 `ui/` 目录)，可以跳过此步。
+
+### Step 2: 同步设备树到 AOSP 源码树
+
+**模拟器 (Android 12):**
+```bash
+cd /opt/ClawOS
+bash aosp/scripts/05-setup-device-tree.sh
+```
+
+> 由于 `/opt/aosp` 已是指向 `/opt/aosp16` 的符号链接，`05-setup-device-tree.sh` 会直接同步到 Android 16 源码树。
+
+### Step 3: AOSP 编译
+
+```bash
+cd /opt/aosp && source build/envsetup.sh && lunch clawos_gsi_arm64-trunk_staging-userdebug && m -j$(nproc)
+```
+
+> `source`/`lunch`/`make` 必须在同一个 shell 中，不能用管道 (pipe) 接 `source`
+
+产物路径: **`/opt/aosp/out/target/product/clawos_gsi_arm64/system.img` (~3.5 GB)**
+
+### Step 5: 测试
+
+**模拟器 (Mac):**
+```bash
+bash aosp/run-emulator-mac.sh --pull --lan --clean
+```
+
+**Pixel 8 Pro (动态分区, A/B slot):**
+```bash
+# 1. 进入 bootloader
+adb reboot bootloader
+
+# 2. 切换到 fastbootd — 动态分区必须
+fastboot reboot fastboot
+
+# 3. 刷入 system (fastbootd 模式)
+fastboot flash system /opt/aosp16/out/target/product/clawos_gsi_arm64/system.img
+
+# 4. 回到 bootloader 刷 vbmeta
+fastboot reboot bootloader
+sleep 5
+fastboot --disable-verity --disable-verification flash vbmeta \
+  /opt/aosp16/out/target/product/clawos_gsi_arm64/vbmeta.img
+
+# 5. 清除用户数据并重启
+fastboot -w
+fastboot reboot
+```
+
+> ⚠️ **Pixel 8 Pro 刷写注意**:
+> - `system.img` 必须在 fastbootd 模式下刷 (bootloader 模式会报 `Invalid command resize-logical-partition`)
+> - `vbmeta.img` 必须在 bootloader 模式下刷 (fastbootd 中会报 `No such file or directory`)
+> - 刷入顺序: bootloader → fastbootd 刷 system → bootloader 刷 vbmeta → `-w` → reboot
+
+### 常见错误
+
+| 错误 | 原因 | 修复 |
+|------|------|------|
+| `Do not set TARGET_PLATFORM_VERSION directly. value: userdebug` | shell 中残留了旧的 AOSP 环境变量 | 开新终端或用 `env -i` 启动干净环境 |
+| `Invalid command resize-logical-partition` | 在 bootloader 模式下刷动态分区 system (Pixel 8 Pro) | 先 `fastboot reboot fastboot` 进入 fastbootd 模式再刷 |
+| `vbmeta: No such file or directory` (fastbootd) | 在 fastbootd 模式下刷 vbmeta | 先 `fastboot reboot bootloader` 回到 bootloader 模式再刷 |
+| `unrecognized property "preprocessed"` | AOSP 16 的 `Android.bp` 不支持此属性 | 从 `Android.bp` 中移除 `preprocessed: true` |
+| `Command 'lunch' not found` | `source build/envsetup.sh` 在子 shell 中执行 (如 pipe) | 确保 source/lunch/make 在同一 shell 中，不要用管道接 source |
+| `ninja: unknown target 'emu_img_zip'` | lunch 环境未正确设置 | 重新执行 `source build/envsetup.sh && lunch clawos_arm64-userdebug` |
+| Gateway `Invalid config` / exit code 1 | `openclaw-default.json` 格式不兼容 bundled Gateway | 用 `/tmp/gateway-test` 方法本地验证配置 (见下文) |
+| 系统分区只读无法 adb push | `/system` 是只读的 | 改用 `/data/local/clawos/openclaw.json`，或重建 ROM |
+
+### 配置文件验证 (重要)
+
+修改 `openclaw-default.json` 后，**必须先在本地验证**再构建 ROM:
+
+```bash
+cd /tmp && rm -rf gateway-test && mkdir gateway-test && cd gateway-test
+tar xzf /opt/ClawOS/aosp/device/clawos/gateway/gateway-bundle.tar.gz
+OPENCLAW_CONFIG_PATH=/opt/ClawOS/aosp/device/clawos/gateway/openclaw-default.json \
+OPENCLAW_STATE_DIR=/tmp/gateway-test/state \
+HOME=/tmp/gateway-test \
+node --import ./intl-polyfill.mjs ./openclaw.mjs gateway --allow-unconfigured --bind loopback
+```
+
+- 如果立即报错 `Invalid config`，说明配置有问题，不要构建 ROM
+- 如果正常启动监听 18789 端口，说明配置有效，按 Ctrl+C 退出后清理: `rm -rf /tmp/gateway-test`
+
+### 快速热更新 (不重建 ROM)
+
+对于 `openclaw-default.json` 等运行时配置文件，可以直接 adb push 到模拟器测试:
+
+```bash
+# 在 Mac 上执行
+scp legion:/opt/ClawOS/aosp/device/clawos/gateway/openclaw-default.json /tmp/openclaw-fixed.json
+adb root
+adb push /tmp/openclaw-fixed.json /data/local/clawos/openclaw.json   # 注意: 不带 config/ 子目录
+adb reboot
+```
+
+⚠️ Gateway 运行时配置路径是 `/data/local/clawos/openclaw.json` (不是 `/data/local/clawos/config/openclaw.json`)
+
+## 开发约定
+
+- 始终使用中文交流
+- 不自动提交 git (除非明确要求)
+- 不自动启动应用 (除非明确要求)
+- 不随意创建文档 (除非明确要求或在设计阶段)
+- 完成任务前使用 MCP feedback 工具确认
+- 平台抽象: 新功能需考虑 Electron 和 Android 两个平台
+- 敏感文件 (.env.local, openclaw.json) 不提交到 git
+- AOSP 源码 (`/opt/aosp`) 不在 git 仓库中，只有构建脚本 (`aosp/`) 在仓库中
+- 在 Ubuntu 服务器上开发时，注意文件权限 (项目目录 owner 需一致)
+- Android WebView 关键样式使用内联样式，不依赖 Tailwind class
+
+## 关键文件速查
+
+| 需求 | 文件 |
+|------|------|
+| **AOSP 构建** | |
+| AOSP 构建参数 | `aosp/config/build-env.conf` |
+| AOSP 构建指南 | `aosp/GUIDE.md` |
+| AOSP 构建脚本 | `aosp/scripts/01~05` |
+| 设备树同步 | `aosp/scripts/05-setup-device-tree.sh` |
+| Mac 模拟器启动 | `aosp/run-emulator-mac.sh` |
+| ClawOS 产品定义 | `aosp/device/clawos/clawos_arm64.mk` |
+| 精简应用列表 | `aosp/device/clawos/clawos_product.mk` |
+| 移除 Launcher | `aosp/device/clawos/clawos_system_ext.mk` |
+| Init 服务 | `aosp/device/clawos/init/init.clawos.rc` |
+| **UI 开发** | |
+| 修改 UI 布局 | `ui/src/App.tsx` |
+| 修改对话气泡 | `ui/src/components/MessageBubble.tsx` |
+| 修改输入框/语音 | `ui/src/components/InputBar.tsx` |
+| 修改 HUD 状态栏 | `ui/src/components/HUD.tsx` |
+| 修改 Gateway 连接 | `ui/src/gateway/client.ts` |
+| 修改平台检测/桥接 | `ui/src/gateway/bridge.ts` |
+| 修改平台配置 | `ui/src/gateway/config.ts`, `ui/src/gateway/filesystem.ts` |
+| 修改应用列表/抽屉 | `ui/src/components/AppDrawer.tsx`, `ui/src/store/apps.ts` |
+| 修改主题色 | `ui/src/index.css` (@theme 块) |
+| 修改 3D 效果 | `ui/src/scene/` 目录 |
+| 修改状态管理 | `ui/src/store/` 目录 |
+| **语音功能** | |
+| 语音 Capacitor 插件 (前端) | `ui/src/voice/plugin.ts` |
+| 语音服务 API (前端) | `ui/src/voice/index.ts` |
+| 语音类型定义 (前端) | `ui/src/voice/types.ts` |
+| 语音原生插件 (Android) | `ui/android/.../plugins/ClawOSVoice.java` |
+| Sherpa-ONNX AAR | `ui/android/app/libs/sherpa-onnx.aar` (.gitignore) |
+| 语音模型 (ROM 预装) | `aosp/device/clawos/models/{stt,tts,vad}/` (.gitignore) |
+| **Android 原生** | |
+| Capacitor 主 Activity | `ui/android/.../app/MainActivity.java` |
+| 系统桥接插件 | `ui/android/.../plugins/ClawOSBridge.java` |
+| AndroidManifest | `ui/android/app/src/main/AndroidManifest.xml` |
+| Gradle 构建 | `ui/android/app/build.gradle` |
+| **Ollama / 模型切换** | |
+| 模型切换 UI 组件 | `ui/src/components/ModelSwitcher.tsx` |
+| 模型状态 (Zustand) | `ui/src/store/connection.ts` (`ModelMode`, `MODEL_OPTIONS`) |
+| Gateway RPC (setModelOverride) | `ui/src/gateway/client.ts` |
+| Ollama 提供商配置 | `aosp/device/clawos/gateway/openclaw-default.json` → `models.providers.ollama` |
+| Gateway 启动脚本 (Ollama 检查) | `aosp/device/clawos/gateway/start-gateway.sh` |
+| AI 系统上下文 (模型说明) | `aosp/device/clawos/gateway/AGENTS.md` |
+| **GSI 真机** | |
+| GSI 产品定义 | `aosp/device/clawos/clawos_gsi_arm64.mk` |
+| GSI BoardConfig | `aosp/device/clawos/clawos_gsi_arm64/BoardConfig.mk` |
+| Gateway 目录准备脚本 | `aosp/device/clawos/gateway/prepare-dirs.sh` |
+| init 服务定义 | `aosp/device/clawos/init/init.clawos.rc` |
+| SELinux 策略 | `aosp/device/clawos/sepolicy/` |
+| Pixel 8 Pro 镜像拉取 (Windows) | `aosp/pull-pixel8pro-images-win.ps1` |
+| Pixel 8 Pro 刷机 (Windows) | `aosp/flash-pixel8pro-win.ps1` |
+| 模拟器运行 (Windows) | `aosp/run-emulator-win.ps1` |
+| **桌面平台** | |
+| Electron 主进程 | `ui/electron/main.ts` |
+| Electron Preload API | `ui/electron/preload.cts` |
+| 系统部署脚本 | `build/scripts/` 目录 |
+
+## ROM 构建关键规则
+
+⚠️ **必须遵守以下规则，否则会构建出不正确的 ROM 镜像**:
+
+1. **不要混用两套 AOSP 源码树**:
+   - `/opt/aosp` = Android 12, 用于模拟器
+   - `/opt/aosp16` = Android 16, 用于 Pixel 8 Pro
+   - **绝对不能**用 `/opt/aosp` 编译 Pixel 8 Pro 的 GSI
+
+2. **Android 16 编译必须用 `env -i` 干净环境**:
+   - Android 12 的 `lunch` 会设置 `TARGET_BUILD_VARIANT` 等环境变量
+   - 这些变量会导致 AOSP 16 编译报错: `Do not set TARGET_PLATFORM_VERSION directly`
+   - 正确做法: `env -i HOME=$HOME USER=$USER PATH=... bash -c 'cd /opt/aosp16 && source build/envsetup.sh && lunch ... && m -j$(nproc)'`
+
+3. **Lunch 格式**: `clawos_gsi_arm64-trunk_staging-userdebug` (三段式, Android 16)
+
+4. **`/opt/aosp` 是符号链接到 `/opt/aosp16`**，`05-setup-device-tree.sh` 直接同步到正确目录
+
+5. **`source build/envsetup.sh` 不能通过管道传递** — 必须和 `lunch`、`make` 在同一个 shell 中
+
+6. **修改 `openclaw-default.json` 后必须先本地验证** — 详见上方"配置文件验证"
+
+7. **Gateway 运行时数据路径**: `/data/local/tmp/clawos/` (shell:shell 所有, SELinux `shell_data_file` 类型)
+
+8. **Pixel 8 Pro 刷写顺序**: bootloader 刷 vbmeta → fastbootd 刷 system → reboot
+
+详细步骤见上方 "ROM 构建完整指南"
+
+## 模拟器运行注意事项
+
+1. **架构限制**: ClawOS 模拟器镜像为 ARM64 (arm64-v8a)，仅支持 ARM64 主机 (Apple Silicon Mac / ARM64 Windows)。x86_64 主机无法运行
+2. **镜像拉取 (Mac)**: `aosp/run-emulator-mac.sh --pull --lan --clean`
+3. **镜像拉取 (Windows ARM64)**: `.\aosp\run-emulator-win.ps1 -Pull -Lan -Clean`
+4. **`--clean` / `-Clean` 标志**: 更新 ROM 后必须加，否则可能使用旧的 AVD 缓存
+5. **麦克风**: 启动后需手动开启 Extended Controls → Microphone → "Virtual microphone uses host audio input"
+6. **macOS 权限**: 首次需授权麦克风给 `qemu-system-aarch64` (System Settings → Privacy & Security → Microphone)
+7. **Windows ARM64 前置要求**: 需要开启 Hyper-V，建议使用 2024+ 版 Android Studio
+8. **ADB 调试**: 模拟器默认开启 ADB over TCP (端口 5555)
+9. **SELinux**: 模拟器以 `permissive` 模式运行
+10. **镜像格式**: `make emu_img_zip` 生成的 zip 内含 `arm64-v8a/` 子目录，脚本会自动处理解压和安装
+
+## Ubuntu 服务器环境速查
+
+| 项目 | 值 |
+|------|------|
+| 主机名 | `legion` |
+| 系统 | Ubuntu 24.04 x86_64 |
+| CPU / RAM | 20 核 / 64 GB |
+| 项目路径 | `/opt/ClawOS` |
+| AOSP 源码 | `/opt/aosp` → 符号链接到 `/opt/aosp16` (Android 16) |
+| AOSP 12 (旧) | `/opt/aosp12` (已归档) |
+| 构建产物 | `/opt/aosp/out/target/product/clawos_gsi_arm64/` |
+| JDK 21 (Gradle) | `$JAVA_HOME` (OpenJDK 21) |
+| ccache 目录 | `~/.ccache` (50G) |
+| repo 工具 | `~/bin/repo` |
+
+## OpenClaw Gateway 配置注意事项
+
+ROM 中 bundled 的 Gateway 是预编译版本 (`gateway-bundle.tar.gz`)，其 Zod schema 可能与 `/opt/openclaw/src` 中的源码不完全一致。修改 `openclaw-default.json` 时注意:
+
+| 配置项 | 正确值 | 错误值 | 说明 |
+|--------|--------|--------|------|
+| `models.providers.ollama.api` | `"openai-completions"` | `"ollama"` | bundled 版本不支持 `"ollama"` API 类型 |
+| `models.providers.ollama.baseUrl` | `"http://10.0.2.2:11434/v1"` | `"http://10.0.2.2:11434"` | OpenAI 兼容端点需要 `/v1` 后缀 |
+| `sessions.patch` 参数 | `key` + `model` | `sessionKey` + `modelOverride` | 参数名必须精确匹配 schema |
+| `.strict()` schema | 不允许额外字段 | — | 所有 schema 都用了 `.strict()`，多余字段会导致验证失败 |
+
+**OpenClaw 源码位置**: `/opt/openclaw/src` (可参考 schema 定义，但以实际 bundled 版本为准)
+
+## Gateway 2026.3.12 Scope/Auth 机制
+
+Gateway 2026.3.12 引入了设备身份验证 (device pairing) 安全机制。对没有设备身份的非 Control-UI 客户端，所有 scopes 在握手时会被清空，导致 `models.list`、`chat.send` 等 RPC 调用失败 (`missing scope: operator.read`)。
+
+**解决方案**:
+- 客户端 ID 使用 `openclaw-control-ui` (而非 `webchat-ui`)
+- 配合 `gateway.controlUi.dangerouslyDisableDeviceAuth: true` 跳过设备身份验证
+- 客户端 mode 保持 `webchat` 以确保 webchat 功能正常
+- 请求的 scopes: `['operator.admin']`
+
+**注意**: 修改客户端 ID 或 scopes 时，必须同步修改 `ui/src/gateway/client.ts` 中的 `sendHandshake` 方法和 `openclaw-default.json` 中的 `gateway.controlUi` 配置。
+
+## Android 模拟器网络
+
+| 地址 | 说明 |
+|------|------|
+| `10.0.2.2` | 模拟器 → 宿主机 127.0.0.1 (标准 Android 模拟器映射) |
+| `10.0.2.15` | 模拟器自身 IP |
+| `192.168.x.x` | 宿主机局域网 IP (需要宿主机服务绑定 0.0.0.0) |
+
+Ollama 从模拟器访问: `http://10.0.2.2:11434` (需要 Mac 上 Ollama 正在运行)
+测试连通性: `adb shell '/product/bin/node -e "fetch(\"http://10.0.2.2:11434/api/tags\").then(r=>r.text()).then(console.log).catch(console.error)"'`
+
+## 已排除的大文件 (.gitignore)
+
+以下文件不在 git 中，需要手动下载/生成：
+
+| 文件 | 大小 | 获取方式 |
+|------|------|----------|
+| `ui/android/app/libs/sherpa-onnx.aar` | ~38MB | GitHub Releases 下载 |
+| `aosp/device/clawos/models/` | ~123MB | Hugging Face 下载 |
+| `aosp/device/clawos/apps/ClawOS.apk` | ~108MB | 构建生成 (Step 1) |
+| `aosp/device/clawos/prebuilt/node` | ~68MB | Node.js v22.16.0 ARM64 交叉编译 (with small-icu) |
+| `aosp/device/clawos/gateway/gateway-bundle.tar.gz` | ~66MB | OpenClaw npm pack + npm install --production |

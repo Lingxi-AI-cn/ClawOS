@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    ClawOS SystemUI configuration overlay.
+    Placeholder for future kiosk mode customizations.
+    Only override values that exist in the AOSP SystemUI config.
+-->
+<resources>
+</resources>

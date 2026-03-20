@@ -1,0 +1,25 @@
+# ClawOS Gateway SELinux Policy
+#
+# Defines the security domain for the Node.js-based OpenClaw Gateway.
+# Currently permissive for development; will be tightened for production.
+
+# Define the domain and executable type
+# Must use coredomain (executed from /product, which is part of system)
+# Must use system_file_type (required by Treble for /product files)
+type clawos_gateway, domain, coredomain;
+type clawos_gateway_exec, exec_type, system_file_type, file_type;
+
+# Custom file type for gateway configuration/code files
+type clawos_gateway_file, system_file_type, file_type;
+
+# Allow init to start this service
+init_daemon_domain(clawos_gateway)
+
+# Development: permissive mode to avoid SELinux denials during testing.
+# TODO: Replace with targeted allow rules for production builds.
+permissive clawos_gateway;
+
+# Development: permissive domains for ClawOS services and app
+permissive shell;
+permissive untrusted_app;
+permissive untrusted_app_32;

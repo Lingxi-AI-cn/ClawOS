@@ -1,0 +1,6 @@
+{
+  "name": "@openclaw/dingtalk",
+  "version": "0.1.0",
+  "description": "OpenClaw DingTalk channel plugin (placeholder - replace with actual plugin build)",
+  "main": "index.js"
+}

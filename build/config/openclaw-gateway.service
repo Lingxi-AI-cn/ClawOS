@@ -1,0 +1,43 @@
+[Unit]
+Description=OpenClaw Gateway - AI Assistant Gateway for ClawOS
+Documentation=https://openclaw.ai/docs
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=clawos
+Group=clawos
+WorkingDirectory=/opt/openclaw
+Environment=NODE_ENV=production
+Environment=HOME=/home/clawos
+Environment=OPENCLAW_STATE_DIR=/home/clawos/.openclaw
+
+# OpenClaw gateway: bind to LAN for host access, allow unconfigured for initial setup
+ExecStart=/usr/bin/node /opt/openclaw/openclaw.mjs gateway --bind lan --port 18789 --allow-unconfigured
+
+# Restart policy
+Restart=always
+RestartSec=5
+StartLimitIntervalSec=60
+StartLimitBurst=5
+
+# Security hardening
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/home/clawos/.openclaw
+ReadWritePaths=/tmp
+PrivateTmp=true
+
+# Resource limits
+LimitNOFILE=65536
+MemoryMax=2G
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=openclaw-gateway
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,117 @@
+# ClawOS Init Script
+#
+# Sets ClawOS-specific system properties and prepares the environment
+# for the ClawOS Launcher and OpenClaw Gateway service.
+#
+# This file is installed to /product/etc/init/init.clawos.rc
+
+on early-init
+    setprop ro.clawos.status booting
+
+on boot
+    setprop ro.clawos.status running
+    setprop ro.setupwizard.mode DISABLED
+    # ClawOS launcher handles immersive mode in its own Activity code;
+    # system-wide immersive is removed so other apps retain navigation gestures.
+    setprop persist.sys.screen_off_timeout 2147483647
+    setprop service.adb.tcp.port 5555
+
+# ── ClawOS directory preparation (one-shot) ───────────────────
+service clawos_prepare /system/bin/sh /product/etc/clawos/gateway/prepare-dirs.sh
+    class late_start
+    user shell
+    group shell inet
+    disabled
+    oneshot
+    seclabel u:r:shell:s0
+
+# ── ClawOS Gateway Service ─────────────────────────────────────
+service clawos_gateway /system/bin/sh /product/etc/clawos/gateway/start-gateway.sh
+    class late_start
+    user shell
+    group shell inet net_raw net_admin
+    disabled
+    onrestart setprop clawos.gateway.status restarting
+    seclabel u:r:shell:s0
+
+on property:sys.boot_completed=1
+    setprop clawos.gateway.status starting
+    start clawos_setup_network
+    start clawos_prepare
+    start clawos_install_cromite
+    start clawos_install_trime
+    start clawos_grant_perms
+    start clawos_set_default_home
+
+on property:init.svc.clawos_prepare=stopped
+    start clawos_gateway
+    start clawos_cdp_bridge
+
+# ── CDP Bridge (root, for Cromite abstract socket access) ───
+service clawos_cdp_bridge /system/bin/sh -c "/product/bin/node /product/etc/clawos/gateway/cdp-bridge.mjs > /data/local/tmp/cdp-bridge.log 2>&1"
+    class late_start
+    user root
+    group root inet
+    disabled
+    seclabel u:r:shell:s0
+
+# ── ClawOS permission granter ────────────────────────────────
+service clawos_grant_perms /system/bin/sh -c "sleep 3 && /system/bin/appops set com.clawos.app SYSTEM_ALERT_WINDOW allow && /system/bin/appops set com.clawos.app RECORD_AUDIO allow && /system/bin/pm grant com.clawos.app android.permission.RECORD_AUDIO 2>/dev/null && log -t ClawOS.Init 'Permissions granted to com.clawos.app'"
+    class late_start
+    user root
+    group root
+    disabled
+    oneshot
+    seclabel u:r:shell:s0
+
+# ── ClawOS default HOME setter (one-shot) ─────────────────────
+service clawos_set_default_home /system/bin/sh -c "sleep 5 && /system/bin/cmd package set-home-activity com.clawos.app/.MainActivity && log -t ClawOS.Init 'Default HOME set to com.clawos.app/.MainActivity'"
+    class late_start
+    user root
+    group root
+    disabled
+    oneshot
+    seclabel u:r:shell:s0
+
+# ── Network config for Node.js DNS (c-ares) + CA certs ─────────
+service clawos_setup_network /system/bin/sh /product/etc/clawos/gateway/setup-network.sh
+    class late_start
+    user root
+    group root
+    disabled
+    oneshot
+    seclabel u:r:shell:s0
+
+# ── Gboard first-boot installer ──────────────────────────────
+service clawos_install_gboard /system/bin/sh /product/etc/clawos/gateway/install-gboard.sh
+    class late_start
+    user shell
+    group shell inet
+    disabled
+    oneshot
+    seclabel u:r:shell:s0
+
+# ── Cromite browser first-boot installer ─────────────────────
+service clawos_install_cromite /system/bin/sh /product/etc/clawos/gateway/install-cromite.sh
+    class late_start
+    user shell
+    group shell inet
+    disabled
+    oneshot
+    seclabel u:r:shell:s0
+
+# ── Trime (RIME) Chinese IME first-boot installer ───────────
+service clawos_install_trime /system/bin/sh /product/etc/clawos/gateway/install-trime.sh
+    class late_start
+    user shell
+    group shell inet sdcard_rw media_rw everybody
+    disabled
+    oneshot
+    seclabel u:r:shell:s0
+
+on property:init.svc.clawos_gateway=running
+    setprop clawos.gateway.status running
+
+on property:init.svc.clawos_gateway=stopped
+    setprop clawos.gateway.status stopped
+    start clawos_gateway
