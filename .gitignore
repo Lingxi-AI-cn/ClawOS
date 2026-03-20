@@ -17,11 +17,12 @@ openclaw.json
 *.swp
 *~
 
-# Cursor plans (local only)
-.cursor/plans/
+# Cursor IDE (local only)
+.cursor/
 
-# Migration docs (contain PII references)
-docs/MIGRATION-*.md
+# Internal development docs
+docs/
+CLAUDE.md
 
 # AOSP 构建产物 (如果不小心放到仓库目录内)
 out/

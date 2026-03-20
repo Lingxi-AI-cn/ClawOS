@@ -14,6 +14,23 @@ ClawOS is an experimental mobile OS deeply customized on AOSP. Instead of tradit
 - **App Drawer** — Swipe-up gesture + button entry, search, half/full screen toggle
 - **Kiosk Mode** — ClawOS as the sole Launcher for immersive full-screen experience
 
+## Screenshots
+
+<table>
+  <tr>
+    <td align="center"><img src="Screenshots/S1.png" width="200"/><br/><b>Home Screen</b></td>
+    <td align="center"><img src="Screenshots/S2.png" width="200"/><br/><b>Model Setup</b></td>
+    <td align="center"><img src="Screenshots/S3.png" width="200"/><br/><b>Voice Input</b></td>
+    <td align="center"><img src="Screenshots/S4.png" width="200"/><br/><b>AI Chat</b></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="Screenshots/S5.png" width="200"/><br/><b>IM Integration</b></td>
+    <td align="center"><img src="Screenshots/S6.png" width="200"/><br/><b>App Drawer</b></td>
+    <td align="center"><img src="Screenshots/S7.png" width="200"/><br/><b>OTA Update</b></td>
+    <td align="center"><img src="Screenshots/S8.png" width="200"/><br/><b>Skill Market</b></td>
+  </tr>
+</table>
+
 ## Architecture
 
 ```
