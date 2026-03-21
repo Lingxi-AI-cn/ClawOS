@@ -1203,6 +1203,9 @@ async function writeConfigFiles(
     const authPath = '/data/local/tmp/clawos/state/agents/main/agent/auth-profiles.json'
 
     if (isAndroid && ClawOSBridge) {
+        // When re-configuring an existing provider, clean up old models first
+        await removeProviderModelsFromAllowList(configPatch.providerId)
+
         await ClawOSBridge.patchJsonFile({
             path: configPath,
             jsonPath: `models.providers.${configPatch.providerId}`,
@@ -1231,5 +1234,75 @@ async function writeConfigFiles(
         console.log('[AddProviderWizard] Config patch:', configPatch)
         console.log('[AddProviderWizard] Auth patch:', authPatch)
         console.log('[AddProviderWizard] Model IDs:', modelIds)
+    }
+}
+
+/** Remove all models for a provider from the allow list and provider config */
+async function removeProviderModelsFromAllowList(providerId: string) {
+    if (!isAndroid || !ClawOSBridge) return
+    const configPath = '/data/local/tmp/clawos/openclaw.json'
+    try {
+        const { content } = await ClawOSBridge.readTextFile({ path: configPath })
+        const config = JSON.parse(content)
+        const models = config?.agents?.defaults?.models
+        if (models && typeof models === 'object') {
+            const prefix = providerId + '/'
+            for (const key of Object.keys(models)) {
+                if (key.startsWith(prefix)) delete models[key]
+            }
+            await ClawOSBridge.writeFile({
+                path: configPath,
+                content: JSON.stringify(config, null, 2),
+            })
+        }
+    } catch (e) {
+        console.warn('[AddProviderWizard] Failed to clean old models:', e)
+    }
+}
+
+/** Remove a provider entirely from the Gateway config */
+export async function removeProviderFromConfig(providerId: string) {
+    if (!isAndroid || !ClawOSBridge) return
+    const configPath = '/data/local/tmp/clawos/openclaw.json'
+    const authPath = '/data/local/tmp/clawos/state/agents/main/agent/auth-profiles.json'
+    try {
+        const { content } = await ClawOSBridge.readTextFile({ path: configPath })
+        const config = JSON.parse(content)
+
+        // Remove provider entry
+        if (config?.models?.providers?.[providerId]) {
+            delete config.models.providers[providerId]
+        }
+
+        // Remove all models for this provider from allow list
+        const models = config?.agents?.defaults?.models
+        if (models && typeof models === 'object') {
+            const prefix = providerId + '/'
+            for (const key of Object.keys(models)) {
+                if (key.startsWith(prefix)) delete models[key]
+            }
+        }
+
+        await ClawOSBridge.writeFile({
+            path: configPath,
+            content: JSON.stringify(config, null, 2),
+        })
+
+        // Remove auth profile
+        try {
+            const { content: authContent } = await ClawOSBridge.readTextFile({ path: authPath })
+            const auth = JSON.parse(authContent)
+            const profileKey = `${providerId}:manual`
+            if (auth?.profiles?.[profileKey]) {
+                delete auth.profiles[profileKey]
+                await ClawOSBridge.writeFile({
+                    path: authPath,
+                    content: JSON.stringify(auth, null, 2),
+                })
+            }
+        } catch { /* auth file may not exist */ }
+    } catch (e) {
+        console.error('[removeProvider] Failed:', e)
+        throw e
     }
 }

@@ -181,18 +181,26 @@ DEPLOY_SOURCE=""
 
 logmsg "Version check: installed=$INSTALLED_VER rom=$ROM_VER"
 
-# (pre-a) Retrieve OTA files staged in app cache (untrusted_app can't write to shell_data_file)
+# (pre-a) Retrieve OTA files staged in app cache (app can't write to shell_data_file)
+# ClawOS is a privileged system app (priv_app), so run-as doesn't work on
+# SELinux-enforcing devices. Use su (available on userdebug) as primary method.
 APP_OTA_CACHE="/data/data/com.clawos.app/cache/ota-pending"
-if run-as com.clawos.app test -f "$APP_OTA_CACHE/.version" 2>/dev/null; then
-    logmsg "OTA files found in app cache, extracting via run-as..."
+APP_ACCESS_CMD=""
+if su 0 test -f "$APP_OTA_CACHE/.version" 2>/dev/null; then
+    APP_ACCESS_CMD="su 0"
+elif run-as com.clawos.app test -f "$APP_OTA_CACHE/.version" 2>/dev/null; then
+    APP_ACCESS_CMD="run-as com.clawos.app"
+fi
+if [ -n "$APP_ACCESS_CMD" ]; then
+    logmsg "OTA files found in app cache (via $APP_ACCESS_CMD), extracting..."
     ensure_dir "$OTA_PENDING_DIR"
     for F in gateway-bundle.tar.gz .version .shasum; do
-        if run-as com.clawos.app test -f "$APP_OTA_CACHE/$F" 2>/dev/null; then
-            run-as com.clawos.app cat "$APP_OTA_CACHE/$F" > "$OTA_PENDING_DIR/$F"
+        if $APP_ACCESS_CMD test -f "$APP_OTA_CACHE/$F" 2>/dev/null; then
+            $APP_ACCESS_CMD cat "$APP_OTA_CACHE/$F" > "$OTA_PENDING_DIR/$F"
             logmsg "  Copied $F from app cache"
         fi
     done
-    run-as com.clawos.app rm -rf "$APP_OTA_CACHE" 2>/dev/null
+    $APP_ACCESS_CMD rm -rf "$APP_OTA_CACHE" 2>/dev/null
     logmsg "App OTA cache cleaned"
 fi
 
@@ -521,14 +529,18 @@ done) &
 LOGCAT_PID=$!
 
 # ── Restart trigger watcher (background) ─────────────────────
-# The app (untrusted_app) can't setprop ctl.restart on Android 16.
+# The app (priv_app) can't setprop ctl.restart on Android 16.
 # Instead, ClawOSBridge writes a trigger file to the app cache.
 # This watcher detects it and kills the gateway to trigger a restart via init.
+# Use su (userdebug) as primary method since run-as doesn't work for priv_app.
 (
     RESTART_CHECK_INTERVAL=2
+    RESTART_TRIGGER="/data/data/com.clawos.app/cache/restart-gateway"
     while kill -0 "$NODE_PID" 2>/dev/null; do
-        if run-as com.clawos.app test -f /data/data/com.clawos.app/cache/restart-gateway 2>/dev/null; then
-            run-as com.clawos.app rm /data/data/com.clawos.app/cache/restart-gateway 2>/dev/null
+        if su 0 test -f "$RESTART_TRIGGER" 2>/dev/null || \
+           run-as com.clawos.app test -f "$RESTART_TRIGGER" 2>/dev/null; then
+            su 0 rm -f "$RESTART_TRIGGER" 2>/dev/null
+            run-as com.clawos.app rm -f "$RESTART_TRIGGER" 2>/dev/null
             logmsg "Restart trigger detected from app, killing gateway (PID $NODE_PID)..."
             kill "$NODE_PID" 2>/dev/null
             break

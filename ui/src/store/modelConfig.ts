@@ -109,12 +109,15 @@ interface ModelConfigStore {
     openWizard: () => void
     closeWizard: () => void
     setActiveModel: (ref: string, name: string) => void
+    clearActiveModel: () => void
     setAvailableModels: (models: AvailableModel[]) => void
     addUserProvider: (providerId: string) => void
+    removeUserProvider: (providerId: string) => void
     setLoading: (loading: boolean) => void
 }
 
 const STORAGE_KEY = 'clawos-user-providers'
+const ACTIVE_MODEL_KEY = 'clawos-active-model'
 
 function loadUserProviders(): string[] {
     try {
@@ -127,12 +130,34 @@ function saveUserProviders(ids: string[]) {
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(ids)) } catch {}
 }
 
+function loadActiveModel(): { ref: string; name: string } | null {
+    try {
+        const raw = localStorage.getItem(ACTIVE_MODEL_KEY)
+        if (!raw) return null
+        const parsed = JSON.parse(raw)
+        if (parsed?.ref) return parsed
+        return null
+    } catch { return null }
+}
+
+function saveActiveModel(ref: string | null, name: string | null) {
+    try {
+        if (ref) {
+            localStorage.setItem(ACTIVE_MODEL_KEY, JSON.stringify({ ref, name }))
+        } else {
+            localStorage.removeItem(ACTIVE_MODEL_KEY)
+        }
+    } catch {}
+}
+
+const savedModel = loadActiveModel()
+
 export const useModelConfigStore = create<ModelConfigStore>((set) => ({
-    isConfigured: false,
+    isConfigured: !!savedModel,
     isSelectorOpen: false,
     isWizardOpen: false,
-    activeModelRef: null,
-    activeModelName: null,
+    activeModelRef: savedModel?.ref ?? null,
+    activeModelName: savedModel?.name ?? null,
     availableModels: [],
     userProviderIds: loadUserProviders(),
     loading: false,
@@ -146,19 +171,38 @@ export const useModelConfigStore = create<ModelConfigStore>((set) => ({
     closeSelector: () => set({ isSelectorOpen: false, isWizardOpen: false }),
     openWizard: () => set({ isWizardOpen: true }),
     closeWizard: () => set({ isWizardOpen: false }),
-    setActiveModel: (ref, name) => set({
-        activeModelRef: ref,
-        activeModelName: name,
-        isConfigured: true,
-    }),
+    setActiveModel: (ref, name) => {
+        saveActiveModel(ref, name)
+        set({
+            activeModelRef: ref,
+            activeModelName: name,
+            isConfigured: true,
+        })
+    },
     setAvailableModels: (models) => set({
         availableModels: models,
     }),
+    clearActiveModel: () => {
+        saveActiveModel(null, null)
+        set({ activeModelRef: null, activeModelName: null, isConfigured: false })
+    },
     addUserProvider: (providerId) => set((state) => {
         if (state.userProviderIds.includes(providerId)) return state
         const updated = [...state.userProviderIds, providerId]
         saveUserProviders(updated)
         return { userProviderIds: updated }
+    }),
+    removeUserProvider: (providerId) => set((state) => {
+        const updated = state.userProviderIds.filter(id => id !== providerId)
+        saveUserProviders(updated)
+        const models = state.availableModels.filter(m => m.provider !== providerId)
+        const activeCleared = state.activeModelRef?.startsWith(providerId + '/')
+        if (activeCleared) saveActiveModel(null, null)
+        return {
+            userProviderIds: updated,
+            availableModels: models,
+            ...(activeCleared ? { activeModelRef: null, activeModelName: null, isConfigured: updated.length > 0 } : {}),
+        }
     }),
     setLoading: (loading) => set({ loading }),
 }))

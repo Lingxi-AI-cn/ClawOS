@@ -7,9 +7,10 @@
 import { useCallback, useEffect, useState, type CSSProperties } from 'react'
 import {
     X, Plus, Check, Cpu, Brain, Loader2, ChevronRight, ChevronLeft,
-    Server, Cloud, Zap, Globe, Sparkles, Bot
+    Server, Cloud, Zap, Globe, Sparkles, Bot, Trash2
 } from 'lucide-react'
 import { useModelConfigStore, type AvailableModel } from '../store/modelConfig.ts'
+import { removeProviderFromConfig } from './AddProviderWizard.tsx'
 
 interface ModelSelectorProps {
     onSelectModel: (modelRef: string) => Promise<{ resolvedProvider?: string; resolvedModel?: string }>
@@ -96,11 +97,14 @@ export default function ModelSelector({ onSelectModel, onAddProvider }: ModelSel
     const activeModelRef = useModelConfigStore((s) => s.activeModelRef)
     const closeSelector = useModelConfigStore((s) => s.closeSelector)
     const setActiveModel = useModelConfigStore((s) => s.setActiveModel)
+    const removeUserProvider = useModelConfigStore((s) => s.removeUserProvider)
 
     // Two-level navigation state
     const [selectedProvider, setSelectedProvider] = useState<string | null>(null)
     const [switching, setSwitching] = useState<string | null>(null)
     const [error, setError] = useState('')
+    const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
+    const [deleting, setDeleting] = useState(false)
 
     // Animate entrance
     const [visible, setVisible] = useState(false)
@@ -169,6 +173,20 @@ export default function ModelSelector({ onSelectModel, onAddProvider }: ModelSel
         setSelectedProvider(null)
         setError('')
     }, [])
+
+    const handleDeleteProvider = useCallback(async (providerId: string) => {
+        setDeleting(true)
+        try {
+            await removeProviderFromConfig(providerId)
+            removeUserProvider(providerId)
+            setConfirmDelete(null)
+        } catch (err: any) {
+            setError(err?.message || '删除失败')
+            setTimeout(() => setError(''), 3000)
+        } finally {
+            setDeleting(false)
+        }
+    }, [removeUserProvider])
 
     if (!isOpen) return null
 
@@ -392,12 +410,56 @@ export default function ModelSelector({ onSelectModel, onAddProvider }: ModelSel
                                             </div>
                                         </div>
 
-                                        {/* Chevron */}
-                                        <ChevronRight size={16} style={{ color: 'rgba(255,255,255,0.2)', flexShrink: 0 }} />
+                                        {/* Delete + Chevron */}
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
+                                            <div
+                                                onClick={(e) => { e.stopPropagation(); setConfirmDelete(providerId) }}
+                                                style={{
+                                                    width: 28, height: 28, borderRadius: 8,
+                                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                    color: 'rgba(255,255,255,0.2)',
+                                                    transition: 'all 0.15s',
+                                                }}
+                                            >
+                                                <Trash2 size={14} />
+                                            </div>
+                                            <ChevronRight size={16} style={{ color: 'rgba(255,255,255,0.2)' }} />
+                                        </div>
                                     </div>
                                 )
                             })}
 
+                            {/* Delete confirmation */}
+                            {confirmDelete && (
+                                <div style={{
+                                    padding: '12px 16px', borderRadius: 12, marginBottom: 8,
+                                    background: 'rgba(248,113,113,0.08)',
+                                    border: '1px solid rgba(248,113,113,0.2)',
+                                }}>
+                                    <div style={{ fontSize: 13, color: '#f87171', marginBottom: 10 }}>
+                                        确定删除 {getProviderMeta(confirmDelete).label}？此操作将移除该服务的所有模型配置。
+                                    </div>
+                                    <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                                        <div
+                                            onClick={() => setConfirmDelete(null)}
+                                            style={{
+                                                padding: '6px 14px', borderRadius: 8, fontSize: 12,
+                                                background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.6)',
+                                                cursor: 'pointer', fontWeight: 500,
+                                            }}
+                                        >取消</div>
+                                        <div
+                                            onClick={() => !deleting && handleDeleteProvider(confirmDelete)}
+                                            style={{
+                                                padding: '6px 14px', borderRadius: 8, fontSize: 12,
+                                                background: 'rgba(248,113,113,0.15)', color: '#f87171',
+                                                cursor: deleting ? 'not-allowed' : 'pointer', fontWeight: 500,
+                                                opacity: deleting ? 0.5 : 1,
+                                            }}
+                                        >{deleting ? '删除中...' : '确认删除'}</div>
+                                    </div>
+                                </div>
+                            )}
 
                             {/* Add provider button */}
                             <div
