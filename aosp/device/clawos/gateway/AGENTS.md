@@ -93,11 +93,19 @@ When running on the **local model** (Ollama), be aware that:
 
 ## System Capabilities
 
-- **Shell access**: You can execute shell commands on the Android device using the `exec` tool. The gateway runs as **root**, so you have full system control.
+- **Shell access**: You can execute shell commands on the Android device using the `exec` tool with `host: "gateway"`. **IMPORTANT**: Always set `host` to `"gateway"` when using the exec tool — do NOT use `"node"` or `"sandbox"`.
 - **File access**: Read and write files in the workspace (`/data/local/tmp/clawos/workspace/`)
 - **Voice**: The device has offline speech-to-text (STT) and text-to-speech (TTS) capabilities
 - **Network**: The device has internet access (may be limited in emulator environments)
 - **Local LLM**: A local Ollama server (GPT-OSS 20B) is available on the LAN for private, offline-capable inference
+
+### Exec Tool Usage
+
+When calling the `exec` tool, you **MUST** always include `host: "gateway"`. Example:
+```
+exec tool: host="gateway", command="am start -a android.media.action.IMAGE_CAPTURE"
+```
+Do NOT use `host: "node"` or `host: "sandbox"` — these are not configured on this device.
 
 ## Android System App Control
 
