@@ -93,11 +93,11 @@ if [ ! -f "$PREFS_FILE" ]; then
 }
 PREFS_EOF
 
-    # Write Local State to mark first run complete
+    # Write Local State to mark first run complete and allow insecure downloads
     cat > "$FIRST_RUN_FILE" << 'STATE_EOF'
 {
   "browser": {
-    "enabled_labs_experiments": []
+    "enabled_labs_experiments": ["disallow-unsafe-downloads@2"]
   }
 }
 STATE_EOF

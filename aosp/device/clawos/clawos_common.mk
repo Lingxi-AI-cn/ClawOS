@@ -105,7 +105,9 @@ PRODUCT_COPY_FILES += \
     device/clawos/gateway/ota-update.mjs:$(TARGET_COPY_OUT_PRODUCT)/etc/clawos/gateway/ota-update.mjs \
     device/clawos/gateway/gateway-version.txt:$(TARGET_COPY_OUT_PRODUCT)/etc/clawos/gateway-version.txt \
     device/clawos/gateway/resolv.conf:$(TARGET_COPY_OUT_PRODUCT)/etc/clawos/resolv.conf \
-    device/clawos/gateway/cacert.pem:$(TARGET_COPY_OUT_PRODUCT)/etc/clawos/cacert.pem
+    device/clawos/gateway/cacert.pem:$(TARGET_COPY_OUT_PRODUCT)/etc/clawos/cacert.pem \
+    device/clawos/gateway/install-myapp.sh:$(TARGET_COPY_OUT_PRODUCT)/etc/clawos/gateway/install-myapp.sh \
+    device/clawos/apps/MyApp.apk:$(TARGET_COPY_OUT_PRODUCT)/etc/clawos/myapp.bin
 
 # ── Agent templates ──────────────────────────────────────────
 PRODUCT_COPY_FILES += \

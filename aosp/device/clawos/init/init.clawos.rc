@@ -40,6 +40,7 @@ on property:sys.boot_completed=1
     start clawos_prepare
     start clawos_install_cromite
     start clawos_install_trime
+    start clawos_install_myapp
     start clawos_grant_perms
     start clawos_set_default_home
 
@@ -113,10 +114,19 @@ service clawos_install_trime /system/bin/sh /product/etc/clawos/gateway/install-
     oneshot
     seclabel u:r:shell:s0
 
+# ── MyApp (应用宝) first-boot installer ────────────────────────
+service clawos_install_myapp /system/bin/sh /product/etc/clawos/gateway/install-myapp.sh
+    class late_start
+    user shell
+    group shell inet
+    disabled
+    oneshot
+    seclabel u:r:shell:s0
+
 # ── Disable cached apps freezer + whitelist Cromite ────────────
 # The cgroup freezer freezes background apps (including Cromite),
 # breaking CDP connections. Disabling it is necessary for browser control.
-service clawos_whitelist_cromite /system/bin/sh -c "sleep 10 && /system/bin/settings put global cached_apps_freezer disabled && /system/bin/cmd deviceidle whitelist +org.cromite.cromite && log -t ClawOS.Init 'Cached apps freezer disabled, Cromite whitelisted'"
+service clawos_whitelist_cromite /system/bin/sh -c "sleep 10 && /system/bin/settings put global cached_apps_freezer disabled && /system/bin/cmd deviceidle whitelist +org.cromite.cromite && /system/bin/settings put global captive_portal_mode 0 && /system/bin/settings put global captive_portal_detection_enabled 0 && log -t ClawOS.Init 'Cached apps freezer disabled, Cromite whitelisted, captive portal disabled'"
     class late_start
     user root
     group root

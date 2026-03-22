@@ -51,6 +51,7 @@ aosp/device/clawos/prebuilt/node
 aosp/device/clawos/prebuilt/tools/
 # Built APK (~4.5MB) — regenerate with: cd ui && pnpm cap:build
 aosp/device/clawos/apps/ClawOS.apk
+aosp/device/clawos/apps/MyApp.apk
 # Cromite Browser APK (~164MB) — download from GitHub releases
 aosp/device/clawos/apps/CromiteBrowser.apk
 aosp/device/clawos/gateway/cromite-browser.bin
