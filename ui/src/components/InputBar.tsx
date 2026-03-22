@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
-import { Mic, MicOff, Send, Square } from 'lucide-react'
+import { Mic, MicOff, Send, Square, RotateCcw } from 'lucide-react'
 import { useChatStore } from '../store/chat.ts'
 import { voiceService } from '../voice/index.ts'
 import { isAndroid } from '../gateway/bridge.ts'
@@ -8,11 +8,12 @@ import { isAndroid } from '../gateway/bridge.ts'
 interface InputBarProps {
   onSend: (message: string) => void
   onAbort: () => void
+  onNewChat?: () => void
   disabled?: boolean
   disabledHint?: string
 }
 
-export default function InputBar({ onSend, onAbort, disabled, disabledHint }: InputBarProps) {
+export default function InputBar({ onSend, onAbort, onNewChat, disabled, disabledHint }: InputBarProps) {
   const [text, setText] = useState('')
   const [focused, setFocused] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -235,6 +236,30 @@ export default function InputBar({ onSend, onAbort, disabled, disabledHint }: In
             : 'none',
         }}
       >
+        {/* New chat button */}
+        {onNewChat && (
+          <motion.button
+            onClick={onNewChat}
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            style={{
+              padding: '8px',
+              borderRadius: '12px',
+              border: '1px solid transparent',
+              background: 'transparent',
+              color: 'rgba(255,255,255,0.3)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'all 0.2s',
+            }}
+            title="新对话"
+          >
+            <RotateCcw size={16} />
+          </motion.button>
+        )}
+
         {/* Mic button */}
         {voiceAvailable && (
           <motion.button

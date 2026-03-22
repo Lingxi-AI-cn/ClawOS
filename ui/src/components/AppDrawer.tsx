@@ -1,6 +1,7 @@
 import { useRef, useCallback, useEffect, useState } from 'react'
-import { Search, X, RefreshCw, ChevronDown } from 'lucide-react'
+import { Search, X, RefreshCw, Power, RotateCw } from 'lucide-react'
 import { useAppsStore, type AppInfo } from '../store/apps.ts'
+import { ClawOSBridge, isAndroid } from '../gateway/bridge.ts'
 
 const GRID_COLS = 4
 const ICON_SIZE = 56
@@ -348,6 +349,9 @@ export default function AppDrawer() {
             </>
           )}
         </div>
+
+        {/* Power controls */}
+        <PowerControls onDone={close} />
       </div>
 
       {/* Spin animation for refresh icon */}
@@ -357,6 +361,89 @@ export default function AppDrawer() {
           to { transform: rotate(360deg); }
         }
       `}</style>
+    </div>
+  )
+}
+
+export function PowerControls({ onDone }: { onDone?: () => void }) {
+  const [confirming, setConfirming] = useState<'reboot' | 'shutdown' | null>(null)
+
+  const handleAction = useCallback(async (action: 'reboot' | 'shutdown') => {
+    if (!isAndroid || !ClawOSBridge) return
+    if (confirming !== action) {
+      setConfirming(action)
+      return
+    }
+    try {
+      if (action === 'reboot') {
+        await ClawOSBridge.rebootDevice()
+      } else {
+        await ClawOSBridge.shutdownDevice()
+      }
+    } catch (e) {
+      console.error(`[PowerControls] ${action} failed:`, e)
+    }
+    onDone?.()
+  }, [confirming, onDone])
+
+  useEffect(() => {
+    if (!confirming) return
+    const t = setTimeout(() => setConfirming(null), 3000)
+    return () => clearTimeout(t)
+  }, [confirming])
+
+  if (!isAndroid) return null
+
+  return (
+    <div style={{
+      display: 'flex',
+      gap: '12px',
+      padding: '12px 16px',
+      borderTop: '1px solid rgba(255,255,255,0.08)',
+      flexShrink: 0,
+    }}>
+      <button
+        onClick={() => handleAction('reboot')}
+        style={{
+          flex: 1,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '6px',
+          padding: '10px',
+          borderRadius: '10px',
+          border: confirming === 'reboot' ? '1px solid rgba(34,211,238,0.5)' : '1px solid rgba(255,255,255,0.1)',
+          background: confirming === 'reboot' ? 'rgba(34,211,238,0.15)' : 'rgba(255,255,255,0.06)',
+          color: confirming === 'reboot' ? '#22d3ee' : 'rgba(255,255,255,0.6)',
+          cursor: 'pointer',
+          fontSize: '13px',
+          transition: 'all 0.2s',
+        }}
+      >
+        <RotateCw size={14} />
+        {confirming === 'reboot' ? '确认重启？' : '重启'}
+      </button>
+      <button
+        onClick={() => handleAction('shutdown')}
+        style={{
+          flex: 1,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '6px',
+          padding: '10px',
+          borderRadius: '10px',
+          border: confirming === 'shutdown' ? '1px solid rgba(239,68,68,0.5)' : '1px solid rgba(255,255,255,0.1)',
+          background: confirming === 'shutdown' ? 'rgba(239,68,68,0.15)' : 'rgba(255,255,255,0.06)',
+          color: confirming === 'shutdown' ? '#ef4444' : 'rgba(255,255,255,0.6)',
+          cursor: 'pointer',
+          fontSize: '13px',
+          transition: 'all 0.2s',
+        }}
+      >
+        <Power size={14} />
+        {confirming === 'shutdown' ? '确认关机？' : '关机'}
+      </button>
     </div>
   )
 }

@@ -95,6 +95,7 @@ PRODUCT_COPY_FILES += \
     device/clawos/gateway/rime-data.tar.gz:$(TARGET_COPY_OUT_PRODUCT)/etc/clawos/rime-data.tar.gz \
     device/clawos/gateway/cdp-shim.mjs:$(TARGET_COPY_OUT_PRODUCT)/etc/clawos/gateway/cdp-shim.mjs \
     device/clawos/gateway/cdp-bridge.mjs:$(TARGET_COPY_OUT_PRODUCT)/etc/clawos/gateway/cdp-bridge.mjs \
+    device/clawos/gateway/playwright-core.tgz:$(TARGET_COPY_OUT_PRODUCT)/etc/clawos/gateway/playwright-core.tgz \
     device/clawos/gateway/intl-polyfill.js:$(TARGET_COPY_OUT_PRODUCT)/etc/clawos/gateway/intl-polyfill.js \
     device/clawos/gateway/dns-polyfill.cjs:$(TARGET_COPY_OUT_PRODUCT)/etc/clawos/gateway/dns-polyfill.cjs \
     device/clawos/gateway/setup-network.sh:$(TARGET_COPY_OUT_PRODUCT)/etc/clawos/gateway/setup-network.sh \

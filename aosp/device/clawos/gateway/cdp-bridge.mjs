@@ -1,18 +1,21 @@
 #!/usr/bin/env node
 /**
- * ClawOS CDP Bridge (runs as root via init service)
+ * ClawOS CDP Bridge
  *
  * Bridges TCP localhost:9222 → Cromite's abstract Unix socket
  * @chrome_devtools_remote.
+ *
+ * SAFETY: Never kills other processes. If port 9222 is in use,
+ * retries with exponential backoff.
  */
 
-const net = require("net");
-const { execSync } = require("child_process");
+import net from "net";
 
-const LISTEN_PORT = 9222;
+const LISTEN_PORT = 9221;
 const CROMITE_SOCKET = "\0chrome_devtools_remote";
 const POLL_INTERVAL_MS = 3000;
-const SOCKET_CHECK_INTERVAL_MS = 5000;
+const SOCKET_CHECK_INTERVAL_MS = 10000;
+const MAX_RETRY_DELAY_MS = 30000;
 
 function log(msg) {
   const ts = new Date().toISOString().substring(11, 23);
@@ -28,22 +31,6 @@ function tryConnect(socketPath) {
   });
 }
 
-function killPortHolder() {
-  try {
-    const out = execSync(`ss -tlnp 2>/dev/null | grep ':${LISTEN_PORT} '`, { encoding: "utf8" });
-    const pidMatch = out.match(/pid=(\d+)/);
-    if (pidMatch) {
-      const pid = parseInt(pidMatch[1]);
-      if (pid !== process.pid) {
-        log(`Killing PID ${pid} on port ${LISTEN_PORT}`);
-        try { process.kill(pid, "SIGTERM"); } catch {}
-        return true;
-      }
-    }
-  } catch {}
-  return false;
-}
-
 let connId = 0;
 
 function handleClient(client) {
@@ -56,6 +43,38 @@ function handleClient(client) {
   upstream.on("close", () => client.destroy());
 }
 
+async function startServer() {
+  const server = net.createServer(handleClient);
+  let retryDelay = 3000;
+
+  return new Promise((resolve) => {
+    function attempt() {
+      server.listen(LISTEN_PORT, "127.0.0.1");
+    }
+
+    server.on("listening", () => {
+      log(`CDP bridge active: 127.0.0.1:${LISTEN_PORT} -> @chrome_devtools_remote`);
+      resolve(server);
+    });
+
+    server.on("error", (e) => {
+      if (e.code === "EADDRINUSE") {
+        log(`Port ${LISTEN_PORT} in use, retrying in ${retryDelay / 1000}s...`);
+        setTimeout(() => {
+          server.close();
+          attempt();
+        }, retryDelay);
+        retryDelay = Math.min(retryDelay * 2, MAX_RETRY_DELAY_MS);
+      } else {
+        log(`Server error: ${e.message}`);
+        setTimeout(attempt, retryDelay);
+      }
+    });
+
+    attempt();
+  });
+}
+
 async function main() {
   log("Starting CDP bridge for Cromite...");
 
@@ -65,24 +84,7 @@ async function main() {
   }
 
   log("Cromite socket found");
-  killPortHolder();
-  await new Promise((r) => setTimeout(r, 1000));
-
-  const server = net.createServer(handleClient);
-
-  server.on("error", (e) => {
-    if (e.code === "EADDRINUSE") {
-      log(`Port ${LISTEN_PORT} in use, retrying...`);
-      killPortHolder();
-      setTimeout(() => { server.close(); server.listen(LISTEN_PORT, "127.0.0.1"); }, 3000);
-    } else {
-      log(`Server error: ${e.message}`);
-    }
-  });
-
-  server.listen(LISTEN_PORT, "127.0.0.1", () => {
-    log(`CDP bridge active: 127.0.0.1:${LISTEN_PORT} -> @chrome_devtools_remote`);
-  });
+  await startServer();
 
   setInterval(async () => {
     if (!(await tryConnect(CROMITE_SOCKET))) {

@@ -6,9 +6,10 @@ import { useModelConfigStore } from '../store/modelConfig.ts'
 interface ChatPanelProps {
   onSend: (message: string) => void
   onAbort: () => void
+  onNewChat?: () => void
 }
 
-export default function ChatPanel({ onSend, onAbort }: ChatPanelProps) {
+export default function ChatPanel({ onSend, onAbort, onNewChat }: ChatPanelProps) {
   const isConfigured = useModelConfigStore((s) => s.isConfigured)
 
   return (
@@ -36,6 +37,7 @@ export default function ChatPanel({ onSend, onAbort }: ChatPanelProps) {
       <InputBar
         onSend={onSend}
         onAbort={onAbort}
+        onNewChat={onNewChat}
         disabled={!isConfigured}
         disabledHint="请先配置模型"
       />

@@ -1194,6 +1194,58 @@ public class ClawOSBridge extends Plugin {
         }).start();
     }
 
+    // ── Power Control ─────────────────────────────────────────────
+
+    @PluginMethod
+    public void rebootDevice(PluginCall call) {
+        new Thread(() -> {
+            try {
+                Process p = Runtime.getRuntime().exec(new String[]{
+                    "su", "-c", "svc power reboot"
+                });
+                int exit = p.waitFor();
+                if (exit != 0) {
+                    p = Runtime.getRuntime().exec(new String[]{"reboot"});
+                    exit = p.waitFor();
+                }
+                JSObject ret = new JSObject();
+                ret.put("ok", exit == 0);
+                final JSObject result = ret;
+                getBridge().getActivity().runOnUiThread(() -> call.resolve(result));
+            } catch (Exception e) {
+                final String msg = e.getMessage();
+                getBridge().getActivity().runOnUiThread(() ->
+                    call.reject("Failed to reboot: " + msg));
+            }
+        }).start();
+    }
+
+    @PluginMethod
+    public void shutdownDevice(PluginCall call) {
+        new Thread(() -> {
+            try {
+                Process p = Runtime.getRuntime().exec(new String[]{
+                    "su", "-c", "svc power shutdown"
+                });
+                int exit = p.waitFor();
+                if (exit != 0) {
+                    p = Runtime.getRuntime().exec(new String[]{
+                        "su", "-c", "reboot -p"
+                    });
+                    exit = p.waitFor();
+                }
+                JSObject ret = new JSObject();
+                ret.put("ok", exit == 0);
+                final JSObject result = ret;
+                getBridge().getActivity().runOnUiThread(() -> call.resolve(result));
+            } catch (Exception e) {
+                final String msg = e.getMessage();
+                getBridge().getActivity().runOnUiThread(() ->
+                    call.reject("Failed to shutdown: " + msg));
+            }
+        }).start();
+    }
+
     // ── Helpers ──────────────────────────────────────────────────
 
     private String getCpuModel() {

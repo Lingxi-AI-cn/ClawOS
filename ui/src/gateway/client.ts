@@ -141,6 +141,10 @@ export class GatewayClient {
     return this.request('sessions.patch', { key: sessionKey, model: modelRef })
   }
 
+  async sessionReset(sessionKey = 'main'): Promise<Record<string, unknown>> {
+    return this.request('sessions.reset', { key: sessionKey, reason: 'new' })
+  }
+
   async listModels(): Promise<Record<string, unknown>> {
     return this.request('models.list', {})
   }

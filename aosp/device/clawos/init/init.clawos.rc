@@ -46,14 +46,18 @@ on property:sys.boot_completed=1
 on property:init.svc.clawos_prepare=stopped
     start clawos_gateway
     start clawos_cdp_bridge
+    start clawos_whitelist_cromite
 
-# ── CDP Bridge (root, for Cromite abstract socket access) ───
+# ── CDP Bridge (bridges TCP:9221 → Cromite abstract Unix socket) ───
+# Must run as root/su to connect to untrusted_app abstract Unix sockets.
+# The shell SELinux domain cannot connectto untrusted_app sockets;
+# the su domain is permissive on userdebug builds.
 service clawos_cdp_bridge /system/bin/sh -c "/product/bin/node /product/etc/clawos/gateway/cdp-bridge.mjs > /data/local/tmp/cdp-bridge.log 2>&1"
     class late_start
     user root
     group root inet
     disabled
-    seclabel u:r:shell:s0
+    seclabel u:r:su:s0
 
 # ── ClawOS permission granter ────────────────────────────────
 service clawos_grant_perms /system/bin/sh -c "sleep 3 && /system/bin/appops set com.clawos.app SYSTEM_ALERT_WINDOW allow && /system/bin/appops set com.clawos.app RECORD_AUDIO allow && /system/bin/pm grant com.clawos.app android.permission.RECORD_AUDIO 2>/dev/null && log -t ClawOS.Init 'Permissions granted to com.clawos.app'"
@@ -108,6 +112,17 @@ service clawos_install_trime /system/bin/sh /product/etc/clawos/gateway/install-
     disabled
     oneshot
     seclabel u:r:shell:s0
+
+# ── Disable cached apps freezer + whitelist Cromite ────────────
+# The cgroup freezer freezes background apps (including Cromite),
+# breaking CDP connections. Disabling it is necessary for browser control.
+service clawos_whitelist_cromite /system/bin/sh -c "sleep 10 && /system/bin/settings put global cached_apps_freezer disabled && /system/bin/cmd deviceidle whitelist +org.cromite.cromite && log -t ClawOS.Init 'Cached apps freezer disabled, Cromite whitelisted'"
+    class late_start
+    user root
+    group root
+    disabled
+    oneshot
+    seclabel u:r:su:s0
 
 on property:init.svc.clawos_gateway=running
     setprop clawos.gateway.status running

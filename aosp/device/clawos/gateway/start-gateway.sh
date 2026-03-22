@@ -162,10 +162,48 @@ extract_bundle() {
     fi
 
     if [ "$TAR_EXIT" -eq 0 ]; then
-        echo '{"type":"module"}' > "$DST_DIR/package.json"
+        # Generate package.json with proper exports map so extensions can
+        # resolve "openclaw/plugin-sdk/*" via Node.js self-referencing packages
+        if [ -d "$DST_DIR/dist/plugin-sdk" ] && [ -x "$NODE" ]; then
+            "$NODE" -e '
+const fs=require("fs"),path=require("path");
+const sdk=path.join(process.argv[1],"dist","plugin-sdk");
+const ex={".":{"default":"./dist/entry.js"}};
+fs.readdirSync(sdk).filter(f=>f.endsWith(".d.ts")).forEach(f=>{
+  const n=f.replace(/\.d\.ts$/,"");
+  if(fs.existsSync(path.join(sdk,n+".js")))
+    ex["./plugin-sdk/"+n]={"default":"./dist/plugin-sdk/"+n+".js"};
+});
+fs.writeFileSync(path.join(process.argv[1],"package.json"),
+  JSON.stringify({name:"openclaw",type:"module",exports:ex}));
+' "$DST_DIR" 2>&1 && logmsg "package.json generated with $(echo "$DST_DIR/dist/plugin-sdk/"*.d.ts | wc -w) exports" \
+                    || { logmsg "exports generation failed, using minimal package.json"; echo '{"type":"module"}' > "$DST_DIR/package.json"; }
+        else
+            echo '{"type":"module"}' > "$DST_DIR/package.json"
+        fi
         echo "$VER" > "$DST_DIR/.version"
         chmod 666 "$DST_DIR/.version" 2>/dev/null
         chmod 666 "$DST_DIR/package.json" 2>/dev/null
+
+        # Install real playwright-core (bundle ships a stub)
+        PW_TAR="/product/etc/clawos/gateway/playwright-core.tgz"
+        PW_DST="$DST_DIR/node_modules/playwright-core"
+        if [ -f "$PW_TAR" ] && [ -d "$PW_DST" ]; then
+            PW_VER=$(cat "$PW_DST/package.json" 2>/dev/null | grep '"version"' | head -1 | sed 's/.*"version"[^"]*"\([^"]*\)".*/\1/')
+            if [ "$PW_VER" = "0.0.0" ] || [ -z "$PW_VER" ]; then
+                logmsg "Replacing playwright-core stub with real package..."
+                rm -rf "$PW_DST"
+                mkdir -p "$PW_DST"
+                tar -C "$PW_DST" --strip-components=1 -xzf "$PW_TAR" 2>/dev/null
+                # Patch Android platform support (treat android as linux)
+                REGISTRY_JS="$PW_DST/lib/server/registry/index.js"
+                if [ -f "$REGISTRY_JS" ]; then
+                    sed -i 's/if (process.platform === "linux")/if (process.platform === "linux" || process.platform === "android")/' "$REGISTRY_JS"
+                    logmsg "playwright-core installed and patched for Android"
+                fi
+            fi
+        fi
+
         logmsg "Bundle $VER extracted OK ($(ls "$DST_DIR/dist/" 2>/dev/null | wc -l) files in dist/)"
         return 0
     else

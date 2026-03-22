@@ -87,6 +87,10 @@ interface ClawOSBridgePlugin {
   writeFile(options: { path: string; content: string }): Promise<{ ok: boolean }>
   /** Delete a skill */
   deleteSkill(options: { slug: string }): Promise<{ ok: boolean }>
+  /** Reboot the device */
+  rebootDevice(): Promise<{ ok: boolean }>
+  /** Shutdown the device */
+  shutdownDevice(): Promise<{ ok: boolean }>
   /** Start OAuth authorization flow (opens browser, returns tokens) */
   startOAuthFlow(options: {
     provider: string
